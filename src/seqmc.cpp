@@ -76,6 +76,7 @@ struct Particle {
     mu = z.mu;
     S = z.S;
   }; 
+  Particle () {};
 };
 
 // Defines the prior, to avoid passing along all the parameters
@@ -126,8 +127,8 @@ inline arma::vec predictive(
 
 // Evaluates the density of a new point given a particle
 inline Particle propagate(
-    const Particle& z,
     const arma::vec& xnew, 
+    const Particle& z,
     const DPNormalPrior& p // iteration timestamp
 ) {
   // Initialize output
@@ -172,10 +173,10 @@ List dp_normal_mix(
   const DPNormalPrior prior(alpha, lambda, kappa, nu, Omega);
   
   // Initialize N particles
-  std::vector<Particle> particle;
+  std::vector<Particle> particle(N);
   for (int i = 0; i < N; i++) {
     vec randstart = {unif_rand(), unif_rand()};
-    particle.push_back(Particle(randstart));
+    particle[i] = Particle(randstart);
   }
   
   // Update every particle
@@ -188,23 +189,12 @@ List dp_normal_mix(
     uvec new_idx = resample(N, weight);
     
     // Propagate
-    std::vector<Particle> temp_particle;
+    std::vector<Particle> temp_particle(particle);
     for (int i = 0; i < N; i++) {
-      temp_particle.push_back(propagate(particle[new_idx[i]], x.row(t).t(), prior));
+      particle[i] = propagate(x.row(t).t(), temp_particle[new_idx[i]], prior);
     }
-    particle = temp_particle;
   }
 
-  // // Output List
-  // ntj.resize(mt);
-  // meantj.resize(d, mt);
-  // Stj.resize(d, d, mt);
-  // return Rcpp::List::create(
-  //   Named("m") = mt,
-  //   Named("nj") = ntj,
-  //   Named("meanj") = meantj,
-  //   Named("Sj") = Stj);
-  
   List out;
   for (int i = 0; i < N; i++) {
     List particlei = List::create(

@@ -21,30 +21,31 @@ plot(y, xlim = c(0, 1), ylim = c(0, 1), bg = k, pch = 21,
 system.time({
   res <- dp_normal_mix(
     y[ , ], 
-    N = 100,
-    alpha = 4, 
+    N = 500,
+    alpha = 10, 
     lambda = runif(2), 
     kappa = 1, 
     nu = 2,
-    Omega =  0.13 ^ 2 * diag(2))  
+    Omega =  0.1 ^ 2 * diag(2))  
 })
 
 
-points(t(res$meanj), bg = "yellow", pch = 21)
+res <- res[[1]]
+points(t(res$mu), bg = "yellow", pch = 21)
 
 resol <- 100
 mesh <- expand.grid(x = seq(0, 1, length.out = resol), y = seq(0, 1, length.out = resol))
 mesh$z <- 0
 
-m <- sum(res$nj[res$nj > 1])
-idx <- which(res$nj > 1)
+m <- sum(res$n[res$n > 1])
+idx <- which(res$n > 1)
 for (i in idx) {
-  # if (res$nj[i] > 1) {
-  #   covmat <-  res$Sj[ , ,i] / (res$nj[i] - 2) 
+  # if (res$n[i] > 1) {
+  #   covmat <-  res$S[ , ,i] / (res$n[i] - 2) 
   # } else {
   #   covmat <- 1 * 0.15 ^ 2 * diag(2)
   # }
-  mesh$z <- mesh$z + (res$nj[i] / res$m) * dmvnorm(mesh[ ,c("x", "y")], res$meanj[ , i, drop = TRUE], res$Sj[ , ,i] / (res$nj[i] - 2))
+  mesh$z <- mesh$z + (res$n[i] / res$m) * dmvnorm(mesh[ ,c("x", "y")], res$mu[ , i, drop = TRUE], res$S[ , ,i] / (res$n[i] - 2))
 }
 z <- matrix(mesh$z, resol, resol)
 contour(z, add = TRUE)
